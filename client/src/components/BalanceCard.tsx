@@ -4,10 +4,9 @@ import type { Balance } from "@shared/schema";
 
 interface BalanceCardProps {
   balance: Balance;
-  onSelect?: (asset:string)=>void;
 }
 
-export function BalanceCard({ balance,onSelect }: BalanceCardProps) {
+export function BalanceCard({ balance }: BalanceCardProps) {
   // Parse and format strings to numbers
   const free = parseFloat(balance.free);
   const locked = parseFloat(balance.locked);
@@ -23,8 +22,6 @@ export function BalanceCard({ balance,onSelect }: BalanceCardProps) {
 
   return (
     <motion.div
-      onClick={()= onSelect?.
-        (balance.asset)}
       variants={{
         hidden: { opacity: 0, y: 20 },
         show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
