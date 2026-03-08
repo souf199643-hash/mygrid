@@ -238,7 +238,7 @@ export default function Dashboard() {
                   {activeBalances.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {activeBalances.map((balance) => (
-                        <BalanceCard key={balance.asset} balance={balance} />
+                        <BalanceCard key={balance.asset} balance={balance} onSelect={(asset)=>setSelectedAsset(asset)} />
                       ))}
                     </div>
                   ) : (
