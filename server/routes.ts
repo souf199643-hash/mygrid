@@ -1,4 +1,4 @@
-import { HttpsProxyAgent } from 'https-proxy-agent';
+// import { HttpsProxyAgent } from 'https-proxy-agent'; //
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import crypto from "crypto";
@@ -32,7 +32,7 @@ export async function registerRoutes(
       const url = `${baseUrl}${endpoint}?${queryString}&signature=${signature}`;
       
       // أضف تعريف الوكيل قبل الـ fetch مباشرة
-      const agent = new HttpsProxyAgent('http://161.35.70.242:8080'); 
+     // const agent = new HttpsProxyAgent('http://161.35.70.242:8080'); //
 
       const response = await fetch(url, {
           method: "GET",
@@ -41,7 +41,6 @@ export async function registerRoutes(
               "Content-Type": "application/json"
           },
           // هذا هو السطر الأهم الذي سيحل مشكلة الموقع المحظور
-          agent: agent 
       });
 
       
