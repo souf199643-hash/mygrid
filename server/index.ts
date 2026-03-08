@@ -1,49 +1,23 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import Binance from 'node-binance-api';
+import express from "express";
+import { registerRoutes } from "./routes"; // تأكد من وجود ملف routes.ts بجانبه
+import { setupVite, serveStatic } from "./vite";
+import path from "path";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // رابط استقبال أمر التشغيل من الواجهة
-  app.post("/api/bot/launch", async (req, res) => {
-    const { apiKey, apiSecret } = req.body;
-    
-    const binance = new Binance().options({
-      APIKEY: apiKey,
-      APISECRET: apiSecret,
-      family: 4 // لضمان استقرار الاتصال
-    });
+const app = express();
+app.use(express.json());
 
-    try {
-      // 1. جلب السعر المباشر الآن
-      const ticker = await binance.prices('ETHUSDT');
-      const currentPrice = parseFloat(ticker.ETHUSDT);
+(async () => {
+  // تسجيل مسارات البوت (الخوارزمية)
+  const server = await registerRoutes(app);
 
-      // 2. تنفيذ صفقة الأمان (200$) ماركت
-      const anchorQty = (200 / currentPrice).toFixed(4);
-      await binance.marketBuy("ETHUSDT", anchorQty);
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
-      // 3. حساب أول مستوى شبكة تحت السعر الحالي
-      const gridLevel = Math.floor(currentPrice / 20) * 20;
-      const gridQty = (100 / gridLevel).toFixed(4);
-
-      // 4. وضع أمر شراء ليميت (100$) عند مستوى الشبكة
-      await binance.buy("ETHUSDT", gridQty, gridLevel);
-      
-      // 5. وضع أمر بيع ليميت (بربح 20$)
-      await binance.sell("ETHUSDT", gridQty, (gridLevel + 20));
-
-      res.json({ 
-        success: true, 
-        message: "تم شراء الأمان ووضع أوامر الشبكة بنجاح",
-        data: { anchorQty, gridLevel }
-      });
-    } catch (error: any) {
-      console.error(error);
-      res.status(500).json({ error: "فشل في تنفيذ العمليات: " + error.message });
-    }
+  const PORT = Number(process.env.PORT) || 5000;
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`المحرك يعمل على المنفذ ${PORT}`);
   });
-
-  const httpServer = createServer(app);
-  return httpServer;
-}
+})();
