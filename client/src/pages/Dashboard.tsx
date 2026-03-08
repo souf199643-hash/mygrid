@@ -1,39 +1,61 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { Activity, KeyRound, Lock, ShieldAlert, Wallet, Zap, Loader2, ArrowLeft } from "lucide-react";
-
-import { binanceCredentialsSchema, type BinanceCredentials } from "@shared/schema";
-import { useGetBalance } from "@/hooks/use-binance";
+import { useQuery } from "@tanstack/react-query";
 import { BalanceCard } from "@/components/BalanceCard";
-
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { TradingPanel } from "@/components/TradingPanel";
+import type { Balance } from "@shared/schema";
 
 export default function Dashboard() {
-  const { mutate: getBalance, isPending, data: balances } = useGetBalance();
-  
-  // Only show balances that have actual funds
-  const activeBalances = balances?.filter(b => parseFloat(b.free) > 0 || parseFloat(b.locked) > 0) || [];
+  // 1. تعريف "الخزنة" لتخزين العملة التي ستختارها
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
-  const form = useForm<BinanceCredentials>({
-    resolver: zodResolver(binanceCredentialsSchema),
-    defaultValues: {
-      apiKey: "TVzTM0ITQYQHS7winUWBSSX1TSM91SDOmwKH5YXB8I2sYlyN52A4LJahajPTXc3C",
-      apiSecret: "apNROw9k54ERO9s6s4XfYMGzfldP5MFKt2nmTRuuCrFr9scqThIFLNUR1aQG0DYt",
-      isTestnet: true,
-    },
+  const { data: balances = [], isLoading } = useQuery<Balance[]>({
+    queryKey: ["/api/balances"],
   });
 
-  function onSubmit(data: BinanceCredentials) {
-    getBalance(data);
-  }
+  // تصفية العملات التي تملك فيها رصيداً فقط
+  const activeBalances = balances.filter(
+    (b) => parseFloat(b.free) > 0 || parseFloat(b.locked) > 0
+  );
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden selection:bg-primary/20">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <h1 className="text-3xl font-bold">لوحة التحكم</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 2. عرض بطاقات الرصيد مع تفعيل خاصية النقر (onSelect) */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">الأرصدة المتوفرة</h2>
+            <div className="grid gap-4">
+              {activeBalances.map((balance) => (
+                <BalanceCard 
+                  key={balance.asset} 
+                  balance={balance} 
+                  onSelect={(asset) => setSelectedAsset(asset)} 
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* 3. عرض لوحة التداول فقط عند اختيار عملة */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">التداول المباشر</h2>
+            {selectedAsset ? (
+              <TradingPanel 
+                asset={selectedAsset} 
+                onClose={() => setSelectedAsset(null)} 
+              />
+            ) : (
+              <div className="p-12 text-center rounded-3xl border border-dashed text-muted-foreground">
+                اضغط على أي عملة لبدء التداول
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-1/4 w-[1000px] h-[500px] bg-primary/5 rounded-[100%] blur-[120px] pointer-events-none -translate-y-1/2" />
       <div className="absolute bottom-0 right-1/4 w-[800px] h-[600px] bg-primary/5 rounded-[100%] blur-[150px] pointer-events-none translate-y-1/3" />
